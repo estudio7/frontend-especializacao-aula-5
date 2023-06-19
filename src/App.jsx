@@ -1,14 +1,13 @@
-import { QueryClient, QueryClientProvider } from 'react-query';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import TodoList from './TodoList';
-
-const queryClient = new QueryClient();
+import { Provider } from 'react-redux';
+import store from './redux/store'; 
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
+    <Provider store={store}>
       <TodoList />
-    </QueryClientProvider>
+    </Provider>
   );
 };
 
