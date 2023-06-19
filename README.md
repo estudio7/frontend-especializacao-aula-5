@@ -8,7 +8,7 @@ Instalação
 
 Para instalar e executar este projeto, você precisa seguir estas etapas:
 
-1.  Clone o repositório: `[git clone URL_DO_REPOSITÓRIO](https://github.com/estudio7/frontend-especializacao-aula-5/)`
+1.  Clone o repositório: `https://github.com/estudio7/frontend-especializacao-aula-5/`
 2.  Navegue até o diretório do projeto: `cd aula_5`
 3.  Instale as dependências: `npm install`
 4.  Inicie o servidor de desenvolvimento: `npm start`
