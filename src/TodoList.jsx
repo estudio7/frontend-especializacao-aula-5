@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient, useMutation } from 'react-query';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { addTodo, editTodo, deleteTodo, setTodos } from './redux/todoReducer';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
@@ -10,59 +11,25 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import './TodoList.css';
 
-const fetchTodo = async () => {
-  const response = await axios.get('https://api-todo-six.vercel.app/todo');
-  return response.data;
-};
-
-const addTodo = async (todo) => {
-  const response = await axios.post('https://api-todo-six.vercel.app/todo', todo);
-  return response.data;
-};
-
-const editTodo = async (todo) => {
-  const response = await axios.put(`https://api-todo-six.vercel.app/todo/${todo._id}`, todo);
-  return response.data;
-};
-
-const deleteTodo = async (id) => {
-  const response = await axios.delete(`https://api-todo-six.vercel.app/todo/${id}`);
-  return response.data;
-};
-
 const TodoList = () => {
-  const queryClient = useQueryClient();
-  const { data: todo, status } = useQuery('todo', fetchTodo);
-  const mutationAdd = useMutation(addTodo, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('todo');
-    },
-  });
-  const mutationEdit = useMutation(editTodo, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('todo');
-    },
-  });
-  const mutationDelete = useMutation(deleteTodo, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('todo');
-    },
-  });
+  const dispatch = useDispatch();
+  const todos = useSelector((state) => state.todo);
 
   const [showModal, setShowModal] = useState(false);
   const [currentTodo, setCurrentTodo] = useState(null);
   const [newTitle, setNewTitle] = useState('');
-  const [newDate, setNewDate] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newCategory, setNewCategory] = useState('');
+  const [newDate, setNewDate] = useState(''); //Adicionado
 
-  const handleAdd = () => {
-    const newTodo = { title: newTitle, date: newDate, description: newDescription, category: newCategory };
-    mutationAdd.mutate(newTodo);
+  const handleAdd = async () => {
+    const newTodo = { title: newTitle, description: newDescription, category: newCategory, date: newDate };
+    const response = await axios.post('https://api-todo-six.vercel.app/todo', newTodo);
+    dispatch(addTodo(response.data));
     setNewTitle('');
-    setNewDate('');
     setNewDescription('');
     setNewCategory('');
+    setNewDate(''); //Adicionado
   };
 
   const handleEdit = (todo) => {
@@ -70,30 +37,33 @@ const TodoList = () => {
     setNewTitle(todo.title);
     setNewDescription(todo.description);
     setNewCategory(todo.category);
+    setNewDate(todo.date); 
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    mutationDelete.mutate(id);
+  const handleDelete = async (id) => {
+    await axios.delete(`https://api-todo-six.vercel.app/todo/${id}`);
+    dispatch(deleteTodo(id));
   };
 
-  const handleSave = () => {
-    const updatedTodo = { ...currentTodo, title: newTitle, description: newDescription, category: newCategory };
-    mutationEdit.mutate(updatedTodo);
+  const handleSave = async () => {
+    const updatedTodo = { ...currentTodo, title: newTitle, description: newDescription, category: newCategory, date: newDate }; //Adicionado 'date'
+    await axios.put(`https://api-todo-six.vercel.app/todo/${updatedTodo._id}`, updatedTodo);
+    dispatch(editTodo(updatedTodo));
     setShowModal(false);
   };
 
-  if (status === 'loading') {
-    return <div className="alert alert-primary">Carregando...</div>;
-  }
+  useEffect(() => {
+    const fetchTodos = async () => {
+      const response = await axios.get('https://api-todo-six.vercel.app/todo');
+      dispatch(setTodos(response.data));
+    };
 
-  if (status === 'error') {
-    return <div className="alert alert-danger">Erro ao carregar os dados.</div>;
-  }
+    fetchTodos();
+  }, [dispatch]);
 
   return (
     <div className="container">
-
       <Row>
         <Col sm={12} md={3}>
           <Form className='mt-5 box-new'>
@@ -117,13 +87,12 @@ const TodoList = () => {
             <Button className="mt-2 btn-orange" onClick={handleAdd}>
               Adicionar Tarefa
             </Button>
-
           </Form>
         </Col>
         <Col sm={12} md={9}>
           <div className="list-group">
             <h2 className="mt-4 text-white">Lista de Tarefas</h2>
-            {todo.map((todo) => (
+            {todos.map((todo) => (
               <div key={todo._id} className="mb-3 box-list list-group-item">
                 <Row>
                   <Col sm={12} md={8} className="d-flex flex-column justify-content-between">
@@ -131,7 +100,6 @@ const TodoList = () => {
                       <h3>{todo.title}</h3>
                       <p className='fw-bold'>{todo.category}</p>
                       <p> {todo.description}</p>
-
                     </div>
                   </Col>
                   <Col sm={12} md={4} className="d-flex flex-column justify-content-between align-items-end">
@@ -139,7 +107,6 @@ const TodoList = () => {
                       <p className='fw-bold'>{new Date(todo.date).toLocaleDateString()}</p>
                     </div>
                     <div>
-
                       <FontAwesomeIcon icon={faEdit} className="mr-2 text-success" onClick={() => handleEdit(todo)} />
                       <FontAwesomeIcon icon={faTrashAlt} className="icon-spacing text-danger" onClick={() => handleDelete(todo._id)} />
                     </div>
